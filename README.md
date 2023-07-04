@@ -1,2 +1,1 @@
-![Architecture Diagram](EventBridgeStepfunctionSQS.drawio.png
-.png)
+![Architecture Diagram](./EventBridgeStepfunctionSQS.drawio.png)
