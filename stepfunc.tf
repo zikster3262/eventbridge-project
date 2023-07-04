@@ -11,7 +11,6 @@ resource "aws_sqs_queue" "delete" {
   name = "apigw-delete"
 }
 
-
 resource "aws_sfn_state_machine" "send_to_sqs_state_machine" {
   name       = "send-to-sqs-state-machine"
   role_arn   = aws_iam_role.step_functions_role.arn
@@ -72,7 +71,6 @@ resource "aws_sfn_state_machine" "send_to_sqs_state_machine" {
 }
 EOF
 }
-
 
 resource "aws_iam_role" "step_functions_role" {
   name = "step-functions-role"

@@ -37,7 +37,6 @@ resource "aws_apigatewayv2_route" "this" {
   target     = "integrations/${aws_apigatewayv2_integration.this.id}"
 }
 
-
 resource "aws_lambda_permission" "update_tem" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
