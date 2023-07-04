@@ -10,12 +10,13 @@ module "relayer" {
   archive_file_inputs = {
     archive_type     = "zip"
     source_dir       = "${path.module}/aws-lambda/relayer"
-    output_path      = "${path.module}/aws-lambda/relayer/lambda/lambda.zip"
+    output_path      = "${path.module}/aws-lambda/relayer/lambda.zip"
     output_file_mode = "0666"
   }
 
   environment_variables = {
-    EVENTBUS = aws_cloudwatch_event_bus.this.name
+    EVENTBUS    = aws_cloudwatch_event_bus.this.name
+    MAX_RETRIES = 3
   }
 
 }

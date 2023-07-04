@@ -1,13 +1,17 @@
 const AWS = require('aws-sdk')
+
 const eventBridge = new AWS.EventBridge()
 
 exports.handler = async (event, context) => {
-  // The event object that you want to send to the event bus
-  let body = JSON.parse(event.body)
-
   try {
-    // Call the AWS SDK to put the event to the EventBridge event bus
+    // Validate the incoming event
+    if (!event.body) {
+      throw new Error('Missing event body.')
+    }
 
+    const body = JSON.parse(event.body)
+
+    // Prepare the event parameters
     const params = {
       Entries: [
         {
@@ -21,7 +25,9 @@ exports.handler = async (event, context) => {
 
     console.log(JSON.stringify(params))
 
-    await eventBridge.putEvents(params).promise()
+    // Call EventBridge API with retries
+    const result = await putEventsWithRetries(params)
+
     console.log('Event sent successfully to EventBridge.')
 
     return {
@@ -30,9 +36,28 @@ exports.handler = async (event, context) => {
     }
   } catch (error) {
     console.error('Error sending event to EventBridge:', error)
+
     return {
       statusCode: 500,
       body: 'Error sending event to EventBridge.'
     }
   }
+}
+
+async function putEventsWithRetries (params) {
+  for (let retry = 1; retry <= process.env.MAX_RETRIES; retry++) {
+    try {
+      await eventBridge.putEvents(params).promise()
+      return
+    } catch (error) {
+      console.error(
+        `Error sending event to EventBridge (attempt ${retry}/${maxRetries}):`,
+        error
+      )
+    }
+  }
+
+  throw new Error(
+    `Failed to send event to EventBridge after ${maxRetries} attempts.`
+  )
 }
