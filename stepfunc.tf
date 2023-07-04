@@ -7,6 +7,10 @@ resource "aws_sqs_queue" "update" {
   name = "apigw-update"
 }
 
+resource "aws_sqs_queue" "delete" {
+  name = "apigw-delete"
+}
+
 
 resource "aws_sfn_state_machine" "send_to_sqs_state_machine" {
   name       = "send-to-sqs-state-machine"
@@ -28,6 +32,11 @@ resource "aws_sfn_state_machine" "send_to_sqs_state_machine" {
           "Variable": "$.action[0]",
           "StringMatches": "UPDATE",
           "Next": "SendToUpdateSQS"
+        },
+        {
+          "Variable": "$.action[0]",
+          "StringMatches": "DELETE",
+          "Next": "SendToDeleteSQS"
         }
       ],
       "InputPath": "$.detail"
@@ -46,6 +55,15 @@ resource "aws_sfn_state_machine" "send_to_sqs_state_machine" {
       "Resource": "arn:aws:states:::sqs:sendMessage",
       "Parameters": {
         "QueueUrl": "${aws_sqs_queue.update.id}",
+        "MessageBody": "$.input"
+      },
+      "End": true
+    },
+    "SendToDeleteSQS": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sqs:sendMessage",
+      "Parameters": {
+        "QueueUrl": "${aws_sqs_queue.delete.id}",
         "MessageBody": "$.input"
       },
       "End": true
@@ -103,6 +121,13 @@ resource "aws_iam_policy" "send_to_sqs_policy" {
         "sqs:SendMessage"
       ],
       "Resource": "${aws_sqs_queue.update.arn}"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sqs:SendMessage"
+      ],
+      "Resource": "${aws_sqs_queue.delete.arn}"
     }
   ]
 }
@@ -113,8 +138,6 @@ resource "aws_iam_role_policy_attachment" "send_to_sqs_policy_attachment" {
   role       = aws_iam_role.step_functions_role.name
   policy_arn = aws_iam_policy.send_to_sqs_policy.arn
 }
-
-
 
 # Create an EventBridge rule
 resource "aws_cloudwatch_event_rule" "step" {
@@ -138,7 +161,6 @@ resource "aws_cloudwatch_event_target" "step_functions_target" {
   arn            = aws_sfn_state_machine.send_to_sqs_state_machine.arn
   role_arn       = aws_iam_role.eventbridge_role.arn
 }
-
 
 resource "aws_iam_role" "eventbridge_role" {
   name               = "eventbridge-role"
