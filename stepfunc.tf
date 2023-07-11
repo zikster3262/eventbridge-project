@@ -3,15 +3,17 @@ resource "aws_sqs_queue" "sqs" {
   name = "apigw-create"
 }
 
+# Create an SQS queue
 resource "aws_sqs_queue" "update" {
   name = "apigw-update"
 }
 
+# Create an SQS queue
 resource "aws_sqs_queue" "delete" {
   name = "apigw-delete"
 }
 
-resource "aws_sfn_state_machine" "send_to_sqs_state_machine" {
+resource "aws_sfn_state_machine" "this" {
   name       = "send-to-sqs-state-machine"
   role_arn   = aws_iam_role.step_functions_role.arn
   definition = <<EOF
@@ -72,6 +74,7 @@ resource "aws_sfn_state_machine" "send_to_sqs_state_machine" {
 EOF
 }
 
+// Create step func role
 resource "aws_iam_role" "step_functions_role" {
   name = "step-functions-role"
 
@@ -91,6 +94,7 @@ resource "aws_iam_role" "step_functions_role" {
 EOF
 }
 
+// Create iam policy enabling step func to send messages to sqs queues
 resource "aws_iam_policy" "send_to_sqs_policy" {
   name        = "send-to-sqs-policy"
   description = "Allows executing Step Functions and sending messages to SQS"
@@ -104,7 +108,7 @@ resource "aws_iam_policy" "send_to_sqs_policy" {
       "Action": [
         "states:StartExecution"
       ],
-      "Resource": "${aws_sfn_state_machine.send_to_sqs_state_machine.arn}"
+      "Resource": "${aws_sfn_state_machine.this.arn}"
     },
     {
       "Effect": "Allow",
@@ -132,6 +136,7 @@ resource "aws_iam_policy" "send_to_sqs_policy" {
 EOF
 }
 
+// Atach policy to the step fun role
 resource "aws_iam_role_policy_attachment" "send_to_sqs_policy_attachment" {
   role       = aws_iam_role.step_functions_role.name
   policy_arn = aws_iam_policy.send_to_sqs_policy.arn
@@ -152,14 +157,16 @@ resource "aws_cloudwatch_event_rule" "step" {
   })
 }
 
+// Set the eventbridge rule as cloudwatch target
 resource "aws_cloudwatch_event_target" "step_functions_target" {
   rule           = aws_cloudwatch_event_rule.step.name
   event_bus_name = aws_cloudwatch_event_bus.this.name
   target_id      = "step-functions-target"
-  arn            = aws_sfn_state_machine.send_to_sqs_state_machine.arn
+  arn            = aws_sfn_state_machine.this.arn
   role_arn       = aws_iam_role.eventbridge_role.arn
 }
 
+// Create eventbridge role
 resource "aws_iam_role" "eventbridge_role" {
   name               = "eventbridge-role"
   assume_role_policy = <<POLICY
@@ -179,6 +186,8 @@ resource "aws_iam_role" "eventbridge_role" {
 POLICY
 }
 
+
+// Create eventbridge policy enabling to start step func
 resource "aws_iam_policy" "eventbridge_policy" {
   name        = "eventbridge-policy"
   description = "Policy allowing EventBridge to send events to Step Functions"
@@ -190,13 +199,15 @@ resource "aws_iam_policy" "eventbridge_policy" {
       "Sid": "AllowStepFunctionsInvocation",
       "Effect": "Allow",
       "Action": "states:StartExecution",
-      "Resource": "${aws_sfn_state_machine.send_to_sqs_state_machine.arn}" 
+      "Resource": "${aws_sfn_state_machine.this.arn}" 
     }
   ]
 }
 POLICY
 }
 
+
+// Attach eventbridge role with stepfunc policy
 resource "aws_iam_role_policy_attachment" "eventbridge_attachment" {
   role       = aws_iam_role.eventbridge_role.name
   policy_arn = aws_iam_policy.eventbridge_policy.arn

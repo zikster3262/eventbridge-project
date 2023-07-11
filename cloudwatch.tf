@@ -1,3 +1,4 @@
+// create iam policy document enabling to send eventbridge data to cloudwatch log group
 data "aws_iam_policy_document" "this" {
   statement {
     effect = "Allow"
@@ -61,12 +62,14 @@ resource "aws_cloudwatch_event_rule" "this" {
 
 }
 
+// Create cloudwatch log group
 resource "aws_cloudwatch_log_group" "this" {
   name              = "/aws/events/eventbus-apigw"
   retention_in_days = 1
   depends_on        = [aws_cloudwatch_event_rule.this]
 }
 
+// Send messages to cloudwatch log group
 resource "aws_cloudwatch_event_target" "this" {
   event_bus_name = aws_cloudwatch_event_bus.this.name
   rule           = aws_cloudwatch_event_rule.this.name

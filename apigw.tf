@@ -1,15 +1,18 @@
+// Create HTTP API v2
 resource "aws_apigatewayv2_api" "this" {
   name          = "api-gw"
   protocol_type = "HTTP"
   version       = "1.0"
 }
 
+// Create Cloudwatch Log group
 resource "aws_cloudwatch_log_group" "api-logs" {
   name              = "/aws/api-gw/logs"
   retention_in_days = 30
   depends_on        = [aws_apigatewayv2_api.this]
 }
 
+// Create APIGW stage v1
 resource "aws_apigatewayv2_stage" "api-gw" {
   api_id      = aws_apigatewayv2_api.this.id
   name        = "v1"

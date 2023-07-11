@@ -37,7 +37,7 @@ resource "aws_apigatewayv2_route" "this" {
   target     = "integrations/${aws_apigatewayv2_integration.this.id}"
 }
 
-resource "aws_lambda_permission" "update_tem" {
+resource "aws_lambda_permission" "this" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
   function_name = module.relayer.function_name
