@@ -9,8 +9,8 @@ module "relayer" {
 
   archive_file_inputs = {
     archive_type     = "zip"
-    source_dir       = "${path.module}/aws-lambda/relayer"
-    output_path      = "${path.module}/aws-lambda/relayer/lambda.zip"
+    source_dir       = "${path.module}/aws-lambda"
+    output_path      = "${path.module}/aws-lambda/lambda.zip"
     output_file_mode = "0666"
   }
 
